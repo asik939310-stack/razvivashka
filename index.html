@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Учим буквы вместе</title>
+<style>
+  :root{
+    --bg:#EAF3EC;
+    --card:#FFFEFA;
+    --ink:#3D3A34;
+    --ink-soft:#6B665C;
+    --accent:#5B8FA8;
+    --accent-dark:#3E6E85;
+    --warm:#F2B880;
+    --warm-dark:#C98A45;
+    --success:#8FBB8C;
+    --success-dark:#4F7A4C;
+    --border:#DCE6DE;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font-family:inherit;}
+  .app{
+    max-width:960px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Верхняя панель: всегда одинаковая, предсказуемая ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 24px;
+    background:var(--card);
+    border-bottom:2px solid var(--border);
+  }
+  .topbar-title{
+    font-size:20px;
+    font-weight:700;
+    color:var(--accent-dark);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .stars-counter{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#FBF3E6;
+    border:2px solid var(--warm);
+    border-radius:999px;
+    padding:8px 16px;
+    font-weight:700;
+    color:var(--warm-dark);
+    font-size:16px;
+  }
+  .sound-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:transparent;
+    border:2px solid var(--border);
+    border-radius:999px;
+    padding:8px 14px;
+    color:var(--ink-soft);
+    font-size:15px;
+    cursor:pointer;
+  }
+  .sound-toggle.off{opacity:0.55;}
+
+  /* ---------- Основная область ---------- */
+  .main{
+    flex:1;
+    display:flex;
+    gap:20px;
+    padding:20px;
+  }
+
+  /* ---------- Левая навигация — всегда видна, всегда одна и та же ---------- */
+  .nav{
+    width:150px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .nav-btn{
+    background:var(--card);
+    border:3px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px 10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink-soft);
+    transition:transform .12s ease, border-color .12s ease;
+    min-height:88px;
+    justify-content:center;
+  }
+  .nav-btn:hover{transform:translateY(-2px);}
+  .nav-btn:active{transform:scale(0.97);}
+  .nav-btn.active{
+    border-color:var(--accent);
+    color:var(--accent-dark);
+    background:#EAF2F5;
+  }
+  .nav-icon{font-size:30px;line-height:1;}
+
+  /* ---------- Карточка контента ---------- */
+  .stage{
+    flex:1;
+    background:var(--card);
+    border-radius:var(--radius);
+    border:2px solid var(--border);
+    padding:32px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:480px;
+    position:relative;
+  }
+
+  .screen{display:none; width:100%; flex-direction:column; align-items:center;}
+  .screen.active{display:flex;}
+
+  /* ---------- Домашний экран ---------- */
+  .home-emoji{font-size:70px; margin-bottom:6px;}
+  .home-title{font-size:26px; font-weight:700; color:var(--accent-dark); margin:6px 0;}
+  .home-text{font-size:17px; color:var(--ink-soft); text-align:center; max-width:480px; line-height:1.6;}
+  .home-buttons{display:flex; gap:16px; margin-top:28px; flex-wrap:wrap; justify-content:center;}
+  .big-choice{
+    background:#EAF2F5;
+    border:3px solid var(--accent);
+    border-radius:var(--radius);
+    padding:20px 26px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    color:var(--accent-dark);
+    font-weight:700;
+    font-size:16px;
+    min-width:130px;
+  }
+  .big-choice:active{transform:scale(0.97);}
+  .big-choice .nav-icon{font-size:36px;}
+
+  /* ---------- Прогресс-точки (без давления, просто отметка пути) ---------- */
+  .progress-dots{display:flex; gap:8px; margin-bottom:18px;}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--border);}
+  .dot.done{background:var(--success);}
+  .dot.current{background:var(--accent);}
+
+  /* ---------- Буквы ---------- */
+  .letter-big{
+    font-size:180px;
+    font-weight:800;
+    color:var(--accent-dark);
+    line-height:1;
+    margin-bottom:6px;
+  }
+  .letter-word-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin:14px 0 10px;
+  }
+  .letter-word-emoji{font-size:56px;}
+  .letter-word-text{font-size:34px; font-weight:700; letter-spacing:1px;}
+  .letter-word-text .hl{color:var(--warm-dark);}
+
+  /* ---------- Слоги ---------- */
+  .syll-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .syll-part{
+    font-size:90px;
+    font-weight:800;
+    color:var(--accent-dark);
+    background:#EAF2F5;
+    border-radius:16px;
+    padding:10px 24px;
+    transition:transform .25s ease, background .25s ease;
+  }
+  .syll-part.consonant{color:var(--warm-dark); background:#FBF0E2;}
+  .syll-plus{font-size:40px;color:var(--ink-soft);}
+  .syll-merged{
+    font-size:100px;
+    font-weight:800;
+    color:var(--success-dark);
+    background:#EEF6EC;
+    border-radius:16px;
+    padding:6px 30px;
+  }
+
+  /* ---------- Слова: подбор картинки ---------- */
+  .mode-switch{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    background:#F3F1E9;
+    border-radius:999px;
+    padding:5px;
+  }
+  .mode-btn{
+    border:none;
+    background:transparent;
+    border-radius:999px;
+    padding:10px 18px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .mode-btn.active{
+    background:var(--accent);
+    color:#fff;
+  }
+  .word-target{
+    font-size:52px;
+    font-weight:800;
+    letter-spacing:2px;
+    color:var(--accent-dark);
+    margin-bottom:26px;
+  }
+  .word-target-hidden{
+    font-size:28px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:26px;
+  }
+  .word-options{display:flex; gap:20px; flex-wrap:wrap; justify-content:center;}
+  .word-option{
+    background:#F5F3EA;
+    border:4px solid var(--border);
+    border-radius:var(--radius);
+    font-size:56px;
+    width:120px;
+    height:120px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .word-option:active{transform:scale(0.96);}
+  .word-option.correct{border-color:var(--success); background:#EEF6EC;}
+  .word-option.hint{border-color:var(--warm); box-shadow:0 0 0 4px #FBF0E2 inset;}
+  .word-feedback{
+    min-height:30px;
+    margin-top:20px;
+    font-size:17px;
+    font-weight:600;
+    color:var(--success-dark);
+  }
+
+  /* ---------- Цифры ---------- */
+  .number-big{
+    font-size:180px;
+    font-weight:800;
+    color:var(--accent-dark);
+    line-height:1;
+    margin-bottom:22px;
+  }
+  .number-dots-grid{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+    min-height:64px;
+    justify-content:center;
+  }
+  .dot-row{display:flex; gap:10px;}
+  .dot-num{
+    width:22px;height:22px;
+    border-radius:50%;
+    background:var(--warm);
+  }
+  .dot-empty{
+    font-size:16px;
+    color:var(--ink-soft);
+    border:2px dashed var(--border);
+    border-radius:999px;
+    padding:10px 20px;
+  }
+
+  /* ---------- Общая тема (алфавит KZ, тело, цвета, животные, действия) ---------- */
+  .topic-title{
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:14px;
+  }
+  .topic-icon-big{
+    font-size:140px;
+    line-height:1;
+    margin-bottom:16px;
+  }
+  .topic-word{
+    font-size:36px;
+    font-weight:700;
+    color:var(--accent-dark);
+    margin-bottom:6px;
+    text-align:center;
+  }
+  .topic-word .hl{color:var(--warm-dark);}
+  .topic-word-emoji{font-size:32px; margin-right:6px;}
+  .topic-translation{
+    font-size:19px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+
+  /* ---------- Общие управляющие кнопки под карточкой ---------- */
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    margin-top:30px;
+    flex-wrap:wrap;
+  }
+  .ctrl-btn{
+    border:none;
+    border-radius:999px;
+    padding:14px 24px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-height:52px;
+  }
+  .ctrl-btn:active{transform:scale(0.97);}
+  .ctrl-listen{background:var(--accent); color:#fff;}
+  .ctrl-next{background:var(--success); color:#fff;}
+  .ctrl-prev{background:transparent; color:var(--ink-soft); border:2px solid var(--border);}
+  .ctrl-home{background:transparent; color:var(--ink-soft); border:2px solid var(--border);}
+
+  @media (max-width:640px){
+    .main{flex-direction:column;}
+    .nav{width:100%; flex-direction:row; flex-wrap:wrap;}
+    .nav-btn{flex:1; min-width:90px;}
+    .letter-big{font-size:120px;}
+    .syll-part, .syll-merged{font-size:56px; padding:8px 16px;}
+    .word-option{width:96px; height:96px; font-size:44px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbar-title"><span>🌿</span> Учим буквы вместе</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">
+        <span id="soundIcon">🔊</span> <span id="soundLabel">Звук включён</span>
+      </button>
+      <div class="stars-counter">⭐ <span id="starsCount">0</span></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="nav">
+      <button class="nav-btn active" id="navHome" onclick="showScreen('home')">
+        <span class="nav-icon">🏡</span> Домой
+      </button>
+      <button class="nav-btn" id="navLetters" onclick="showScreen('letters')">
+        <span class="nav-icon">🔤</span> Буквы
+      </button>
+      <button class="nav-btn" id="navSyll" onclick="showScreen('syll')">
+        <span class="nav-icon">🧩</span> Слоги
+      </button>
+      <button class="nav-btn" id="navWords" onclick="showScreen('words')">
+        <span class="nav-icon">🖼️</span> Слова
+      </button>
+      <button class="nav-btn" id="navNumbers" onclick="showScreen('numbers')">
+        <span class="nav-icon">🔢</span> Цифры
+      </button>
+      <button class="nav-btn" id="nav_kzAlphabet" onclick="openTopic('kzAlphabet')">
+        <span class="nav-icon">🅰️</span> Әліпби
+      </button>
+      <button class="nav-btn" id="nav_body" onclick="openTopic('body')">
+        <span class="nav-icon">🧍</span> Тело
+      </button>
+      <button class="nav-btn" id="nav_colors" onclick="openTopic('colors')">
+        <span class="nav-icon">🎨</span> Цвета
+      </button>
+      <button class="nav-btn" id="nav_animals" onclick="openTopic('animals')">
+        <span class="nav-icon">🐾</span> Животные
+      </button>
+      <button class="nav-btn" id="nav_actions" onclick="openTopic('actions')">
+        <span class="nav-icon">🤸</span> Действия
+      </button>
+    </div>
+
+    <div class="stage">
+
+      <!-- ДОМАШНИЙ ЭКРАН -->
+      <div class="screen active" id="screen-home">
+        <div class="home-emoji">🦉</div>
+        <div class="home-title">Привет! Что будем делать?</div>
+        <div class="home-text">Выбери занятие. Можно заниматься сколько хочется и возвращаться сюда в любой момент.</div>
+        <div class="home-buttons">
+          <div class="big-choice" onclick="showScreen('letters')"><span class="nav-icon">🔤</span>Буквы</div>
+          <div class="big-choice" onclick="showScreen('syll')"><span class="nav-icon">🧩</span>Слоги</div>
+          <div class="big-choice" onclick="showScreen('words')"><span class="nav-icon">🖼️</span>Слова</div>
+          <div class="big-choice" onclick="showScreen('numbers')"><span class="nav-icon">🔢</span>Цифры</div>
+          <div class="big-choice" onclick="openTopic('kzAlphabet')"><span class="nav-icon">🅰️</span>Әліпби</div>
+          <div class="big-choice" onclick="openTopic('body')"><span class="nav-icon">🧍</span>Тело</div>
+          <div class="big-choice" onclick="openTopic('colors')"><span class="nav-icon">🎨</span>Цвета</div>
+          <div class="big-choice" onclick="openTopic('animals')"><span class="nav-icon">🐾</span>Животные</div>
+          <div class="big-choice" onclick="openTopic('actions')"><span class="nav-icon">🤸</span>Действия</div>
+        </div>
+      </div>
+
+      <!-- БУКВЫ -->
+      <div class="screen" id="screen-letters">
+        <div class="progress-dots" id="lettersDots"></div>
+        <div class="letter-big" id="letterBig">А</div>
+        <div class="letter-word-row">
+          <div class="letter-word-emoji" id="letterEmoji">🍉</div>
+          <div class="letter-word-text" id="letterWord">Арбуз</div>
+        </div>
+        <div class="controls">
+          <button class="ctrl-btn ctrl-prev" onclick="letterPrev()">← Назад</button>
+          <button class="ctrl-btn ctrl-listen" onclick="letterListen()">🔊 Слушать</button>
+          <button class="ctrl-btn ctrl-next" onclick="letterNext()">Дальше →</button>
+        </div>
+      </div>
+
+      <!-- СЛОГИ -->
+      <div class="screen" id="screen-syll">
+        <div class="progress-dots" id="syllDots"></div>
+        <div class="syll-row" id="syllRow">
+          <div class="syll-part consonant" id="syllC">М</div>
+          <div class="syll-plus">+</div>
+          <div class="syll-part" id="syllV">А</div>
+        </div>
+        <div class="syll-merged" id="syllMerged" style="display:none;"></div>
+        <div class="controls">
+          <button class="ctrl-btn ctrl-prev" onclick="syllPrev()">← Назад</button>
+          <button class="ctrl-btn ctrl-listen" onclick="syllJoin()">🧲 Соединить</button>
+          <button class="ctrl-btn ctrl-next" onclick="syllNext()">Дальше →</button>
+        </div>
+      </div>
+
+      <!-- СЛОВА -->
+      <div class="screen" id="screen-words">
+        <div class="progress-dots" id="wordsDots"></div>
+
+        <div class="mode-switch">
+          <button class="mode-btn active" id="modeTextBtn" onclick="setWordMode(false)">🔤 Слово написано</button>
+          <button class="mode-btn" id="modeVoiceBtn" onclick="setWordMode(true)">🎧 Только голосом</button>
+        </div>
+
+        <div class="word-target" id="wordTarget">КОТ</div>
+        <div class="word-target-hidden" id="wordTargetHidden" style="display:none;">🎧 Слушай задание</div>
+
+        <div class="controls" style="margin-top:0; margin-bottom:20px;">
+          <button class="ctrl-btn ctrl-listen" onclick="wordListen()" id="wordListenBtn">🔊 Слушать слово</button>
+        </div>
+        <div class="word-options" id="wordOptions"></div>
+        <div class="word-feedback" id="wordFeedback"></div>
+        <div class="controls">
+          <button class="ctrl-btn ctrl-prev" onclick="wordPrev()">← Назад</button>
+          <button class="ctrl-btn ctrl-next" onclick="wordNext()">Дальше →</button>
+        </div>
+      </div>
+
+      <!-- ЦИФРЫ -->
+      <div class="screen" id="screen-numbers">
+        <div class="progress-dots" id="numbersDots"></div>
+        <div class="number-big" id="numberBig">0</div>
+        <div class="number-dots-grid" id="numberDots"></div>
+        <div class="controls">
+          <button class="ctrl-btn ctrl-prev" onclick="numberPrev()">← Назад</button>
+          <button class="ctrl-btn ctrl-listen" onclick="numberListen()">🔊 Слушать</button>
+          <button class="ctrl-btn ctrl-next" onclick="numberNext()">Дальше →</button>
+        </div>
+      </div>
+
+      <!-- ОБЩИЙ ЭКРАН ДЛЯ ТЕМ: алфавит на казахском, тело, цвета, животные, действия -->
+      <div class="screen" id="screen-topic">
+        <div class="topic-title" id="topicTitle">Тема</div>
+        <div class="progress-dots" id="topicDots"></div>
+        <div class="topic-icon-big" id="topicBig">🐱</div>
+        <div class="topic-word" id="topicWord">мысық</div>
+        <div class="topic-translation" id="topicTranslation">кошка</div>
+        <div class="controls">
+          <button class="ctrl-btn ctrl-prev" onclick="topicPrev()">← Назад</button>
+          <button class="ctrl-btn ctrl-listen" onclick="topicListen()">🔊 Слушать</button>
+          <button class="ctrl-btn ctrl-next" onclick="topicNext()">Дальше →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Общее состояние ---------------- */
+let stars = 0;
+let soundOn = true;
+
+function addStar(){
+  stars++;
+  document.getElementById('starsCount').textContent = stars;
+}
+function toggleSound(){
+  soundOn = !soundOn;
+  document.getElementById('soundIcon').textContent = soundOn ? '🔊' : '🔈';
+  document.getElementById('soundLabel').textContent = soundOn ? 'Звук включён' : 'Звук выключен';
+  document.getElementById('soundToggle').classList.toggle('off', !soundOn);
+}
+function speak(text, lang){
+  if(!soundOn) return;
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang || 'ru-RU';
+  u.rate = 0.85;
+  window.speechSynthesis.speak(u);
+}
+
+function showScreen(name, navId){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const map = {home:'navHome', letters:'navLetters', syll:'navSyll', words:'navWords', numbers:'navNumbers'};
+  const targetNav = navId || map[name];
+  if(targetNav) document.getElementById(targetNav).classList.add('active');
+  if(soundOn && window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function renderDots(containerId, total, current){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for(let i=0;i<total;i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i<current ? ' done' : '') + (i===current ? ' current' : '');
+    el.appendChild(d);
+  }
+}
+
+/* ---------------- БУКВЫ ---------------- */
+const letters = [
+  {letter:'А', word:'Арбуз', emoji:'🍉'},
+  {letter:'У', word:'Утка', emoji:'🦆'},
+  {letter:'О', word:'Окно', emoji:'🪟'},
+  {letter:'М', word:'Мяч', emoji:'⚽'},
+  {letter:'С', word:'Сова', emoji:'🦉'},
+  {letter:'Х', word:'Хлеб', emoji:'🍞'},
+  {letter:'Р', word:'Рыба', emoji:'🐟'},
+  {letter:'Ш', word:'Шар', emoji:'🎈'},
+  {letter:'Ы', word:'Сыр', emoji:'🧀'},
+  {letter:'Л', word:'Лук', emoji:'🧅'},
+  {letter:'Н', word:'Нос', emoji:'👃'},
+  {letter:'К', word:'Кот', emoji:'🐱'}
+];
+let letterIndex = 0;
+
+function renderLetter(){
+  const item = letters[letterIndex];
+  document.getElementById('letterBig').textContent = item.letter;
+  document.getElementById('letterEmoji').textContent = item.emoji;
+  const idx = item.word.toUpperCase().indexOf(item.letter);
+  let html = '';
+  for(let i=0;i<item.word.length;i++){
+    if(i===idx) html += '<span class="hl">'+item.word[i]+'</span>';
+    else html += item.word[i];
+  }
+  document.getElementById('letterWord').innerHTML = html;
+  renderDots('lettersDots', letters.length, letterIndex);
+}
+function letterListen(){
+  const item = letters[letterIndex];
+  speak(item.letter + '. ' + item.word);
+}
+function letterNext(){
+  if(letterIndex < letters.length-1){ letterIndex++; renderLetter(); addStar(); }
+}
+function letterPrev(){
+  if(letterIndex > 0){ letterIndex--; renderLetter(); }
+}
+
+/* ---------------- СЛОГИ ---------------- */
+const syllables = [
+  {c:'М',v:'А'}, {c:'М',v:'О'}, {c:'М',v:'У'},
+  {c:'С',v:'А'}, {c:'С',v:'О'}, {c:'С',v:'У'},
+  {c:'Л',v:'А'}, {c:'Л',v:'О'},
+  {c:'Н',v:'А'}, {c:'Н',v:'О'},
+  {c:'К',v:'А'}, {c:'К',v:'О'}
+];
+let syllIndex = 0;
+
+function renderSyll(){
+  const item = syllables[syllIndex];
+  document.getElementById('syllC').textContent = item.c;
+  document.getElementById('syllV').textContent = item.v;
+  document.getElementById('syllRow').style.display = 'flex';
+  document.getElementById('syllMerged').style.display = 'none';
+  renderDots('syllDots', syllables.length, syllIndex);
+}
+function syllJoin(){
+  const item = syllables[syllIndex];
+  document.getElementById('syllRow').style.display = 'none';
+  const merged = document.getElementById('syllMerged');
+  merged.textContent = item.c + item.v.toLowerCase();
+  merged.style.display = 'block';
+  speak(item.c + '... ' + item.v + '... ' + item.c + item.v.toLowerCase());
+}
+function syllNext(){
+  if(syllIndex < syllables.length-1){ syllIndex++; renderSyll(); addStar(); }
+}
+function syllPrev(){
+  if(syllIndex > 0){ syllIndex--; renderSyll(); }
+}
+
+/* ---------------- СЛОВА ---------------- */
+const words = [
+  {word:'КОТ', correct:'🐱', options:['🐱','🐶','🐟']},
+  {word:'ДОМ', correct:'🏠', options:['🏠','🚗','🌳']},
+  {word:'СОК', correct:'🥤', options:['🥤','🍎','🥕']},
+  {word:'ЛУК', correct:'🧅', options:['🧅','🍌','🥔']},
+  {word:'СОМ', correct:'🐟', options:['🐟','🐱','🦆']},
+  {word:'МАК', correct:'🌺', options:['🌺','🌙','⭐']},
+  {word:'ЛУНА', correct:'🌙', options:['🌙','☀️','🧀']},
+  {word:'РУКА', correct:'✋', options:['✋','👂','👃']},
+  {word:'МАМА', correct:'👩', options:['👩','👨','👧']},
+  {word:'НОС', correct:'👃', options:['👃','👁️','👂']}
+];
+let wordIndex = 0;
+let wordVoiceMode = false;
+
+function setWordMode(voiceMode){
+  wordVoiceMode = voiceMode;
+  document.getElementById('modeTextBtn').classList.toggle('active', !voiceMode);
+  document.getElementById('modeVoiceBtn').classList.toggle('active', voiceMode);
+  document.getElementById('wordTarget').style.display = voiceMode ? 'none' : 'block';
+  document.getElementById('wordTargetHidden').style.display = voiceMode ? 'block' : 'none';
+  document.getElementById('wordListenBtn').textContent = voiceMode ? '🔊 Повторить задание' : '🔊 Слушать слово';
+  if(voiceMode) speakTask();
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function renderWord(){
+  const item = words[wordIndex];
+  document.getElementById('wordTarget').textContent = item.word;
+  document.getElementById('wordFeedback').textContent = '';
+  const optionsEl = document.getElementById('wordOptions');
+  optionsEl.innerHTML = '';
+  const shuffled = shuffle(item.options);
+  shuffled.forEach(emoji=>{
+    const btn = document.createElement('div');
+    btn.className = 'word-option';
+    btn.textContent = emoji;
+    btn.onclick = () => checkWord(emoji, item.correct, btn);
+    optionsEl.appendChild(btn);
+  });
+  renderDots('wordsDots', words.length, wordIndex);
+  if(wordVoiceMode) speakTask();
+}
+function speakTask(){
+  speak('Найди картинку. Слово: ' + words[wordIndex].word);
+}
+function wordListen(){
+  if(wordVoiceMode) speakTask();
+  else speak(words[wordIndex].word);
+}
+function checkWord(chosen, correct, btnEl){
+  const allBtns = document.querySelectorAll('#wordOptions .word-option');
+  if(chosen === correct){
+    btnEl.classList.add('correct');
+    document.getElementById('wordFeedback').textContent = 'Верно! Молодец 🌟';
+    speak('Верно');
+    addStar();
+    allBtns.forEach(b=>b.onclick=null);
+  } else {
+    document.getElementById('wordFeedback').textContent = 'Попробуй ещё раз';
+    allBtns.forEach(b=>{
+      if(b.textContent === correct) b.classList.add('hint');
+    });
+  }
+}
+function wordNext(){
+  if(wordIndex < words.length-1){ wordIndex++; renderWord(); }
+}
+function wordPrev(){
+  if(wordIndex > 0){ wordIndex--; renderWord(); }
+}
+
+/* ---------------- ЦИФРЫ ---------------- */
+const numbers = Array.from({length:21}, (_, i) => i); /* 0..20 */
+let numberIndex = 0;
+
+function renderNumber(){
+  const n = numbers[numberIndex];
+  document.getElementById('numberBig').textContent = n;
+  const grid = document.getElementById('numberDots');
+  grid.innerHTML = '';
+  if(n === 0){
+    grid.innerHTML = '<div class="dot-empty">ничего нет</div>';
+  } else {
+    const rows = Math.ceil(n / 5);
+    for(let r=0; r<rows; r++){
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'dot-row';
+      const count = Math.min(5, n - r*5);
+      for(let c=0; c<count; c++){
+        const dot = document.createElement('div');
+        dot.className = 'dot-num';
+        rowDiv.appendChild(dot);
+      }
+      grid.appendChild(rowDiv);
+    }
+  }
+  renderDots('numbersDots', numbers.length, numberIndex);
+}
+function numberListen(){
+  speak(String(numbers[numberIndex]));
+}
+function numberNext(){
+  if(numberIndex < numbers.length-1){ numberIndex++; renderNumber(); addStar(); }
+}
+function numberPrev(){
+  if(numberIndex > 0){ numberIndex--; renderNumber(); }
+}
+
+/* ---------------- ОБЩИЕ ТЕМЫ: алфавит KZ, тело, цвета, животные, действия ---------------- */
+const topics = {
+  kzAlphabet: {
+    title: 'Қазақ әліпбиі — особые буквы',
+    lang: 'kk-KZ',
+    items: [
+      {big:'Ә', word:'әже', translation:'бабушка', emoji:'👵', highlightLetter:'Ә'},
+      {big:'Ғ', word:'ғарыш', translation:'космос', emoji:'🚀', highlightLetter:'Ғ'},
+      {big:'Қ', word:'қоян', translation:'заяц', emoji:'🐰', highlightLetter:'Қ'},
+      {big:'Ң', word:'таң', translation:'утро, рассвет', emoji:'🌅', highlightLetter:'Ң'},
+      {big:'Ө', word:'өрік', translation:'абрикос', emoji:'🍑', highlightLetter:'Ө'},
+      {big:'Ұ', word:'ұя', translation:'гнездо', emoji:'🪺', highlightLetter:'Ұ'},
+      {big:'Ү', word:'үй', translation:'дом', emoji:'🏠', highlightLetter:'Ү'},
+      {big:'Һ', word:'Һ', translation:'редкая буква, в казахском встречается нечасто', emoji:'📜'},
+      {big:'І', word:'ілгек', translation:'крючок', emoji:'🪝', highlightLetter:'І'}
+    ]
+  },
+  body: {
+    title: 'Дене мүшелері — части тела',
+    lang: 'kk-KZ',
+    items: [
+      {big:'😀', word:'бас', translation:'голова'},
+      {big:'👁️', word:'көз', translation:'глаз'},
+      {big:'👂', word:'құлақ', translation:'ухо'},
+      {big:'👃', word:'мұрын', translation:'нос'},
+      {big:'👄', word:'ауыз', translation:'рот'},
+      {big:'🦷', word:'тіс', translation:'зуб'},
+      {big:'💇', word:'шаш', translation:'волосы'},
+      {big:'✋', word:'қол', translation:'рука'},
+      {big:'👆', word:'саусақ', translation:'палец'},
+      {big:'🦵', word:'аяқ', translation:'нога'},
+      {big:'🦶', word:'табан', translation:'стопа'}
+    ]
+  },
+  colors: {
+    title: 'Түстер — цвета',
+    lang: 'kk-KZ',
+    items: [
+      {big:'🔴', word:'қызыл', translation:'красный'},
+      {big:'🟠', word:'қызғылт сары', translation:'оранжевый'},
+      {big:'🟡', word:'сары', translation:'жёлтый'},
+      {big:'🟢', word:'жасыл', translation:'зелёный'},
+      {big:'🔵', word:'көк', translation:'синий'},
+      {big:'🟣', word:'күлгін', translation:'фиолетовый'},
+      {big:'🟤', word:'қоңыр', translation:'коричневый'},
+      {big:'⚫', word:'қара', translation:'чёрный'},
+      {big:'⚪', word:'ақ', translation:'белый'}
+    ]
+  },
+  animals: {
+    title: 'Үй жануарлары — домашние животные',
+    lang: 'kk-KZ',
+    items: [
+      {big:'🐱', word:'мысық', translation:'кошка'},
+      {big:'🐶', word:'ит', translation:'собака'},
+      {big:'🐄', word:'сиыр', translation:'корова'},
+      {big:'🐴', word:'жылқы', translation:'лошадь'},
+      {big:'🐑', word:'қой', translation:'овца'},
+      {big:'🐐', word:'ешкі', translation:'коза'},
+      {big:'🐫', word:'түйе', translation:'верблюд'},
+      {big:'🐔', word:'тауық', translation:'курица'},
+      {big:'🦆', word:'үйрек', translation:'утка'}
+    ]
+  },
+  actions: {
+    title: 'Что делает ребёнок',
+    lang: 'ru-RU',
+    items: [
+      {big:'🍽️', word:'Ребёнок ест'},
+      {big:'🥤', word:'Ребёнок пьёт'},
+      {big:'😴', word:'Ребёнок спит'},
+      {big:'🏃', word:'Ребёнок бежит'},
+      {big:'🤸', word:'Ребёнок прыгает'},
+      {big:'😢', word:'Ребёнок плачет'},
+      {big:'😄', word:'Ребёнок смеётся'},
+      {big:'🧼', word:'Ребёнок моет руки'},
+      {big:'🪥', word:'Ребёнок чистит зубы'},
+      {big:'📖', word:'Ребёнок читает'},
+      {big:'🎨', word:'Ребёнок рисует'},
+      {big:'👕', word:'Ребёнок одевается'}
+    ]
+  }
+};
+let currentTopicKey = 'body';
+let topicIndex = 0;
+
+function openTopic(key){
+  currentTopicKey = key;
+  topicIndex = 0;
+  document.getElementById('topicTitle').textContent = topics[key].title;
+  showScreen('topic', 'nav_'+key);
+  renderTopic();
+}
+function renderTopic(){
+  const t = topics[currentTopicKey];
+  const item = t.items[topicIndex];
+  document.getElementById('topicBig').textContent = item.big;
+  let wordHtml = '';
+  if(item.emoji) wordHtml += '<span class="topic-word-emoji">'+item.emoji+'</span>';
+  if(item.highlightLetter){
+    const w = item.word;
+    const idx = w.toUpperCase().indexOf(item.highlightLetter.toUpperCase());
+    for(let i=0;i<w.length;i++){
+      wordHtml += (i===idx) ? '<span class="hl">'+w[i]+'</span>' : w[i];
+    }
+  } else {
+    wordHtml += item.word;
+  }
+  document.getElementById('topicWord').innerHTML = wordHtml;
+  const transEl = document.getElementById('topicTranslation');
+  if(item.translation){ transEl.style.display='block'; transEl.textContent = item.translation; }
+  else { transEl.style.display='none'; }
+  renderDots('topicDots', t.items.length, topicIndex);
+}
+function topicListen(){
+  const t = topics[currentTopicKey];
+  const item = t.items[topicIndex];
+  const phrase = (item.highlightLetter ? item.big + '. ' : '') + item.word;
+  speak(phrase, t.lang);
+}
+function topicNext(){
+  const t = topics[currentTopicKey];
+  if(topicIndex < t.items.length-1){ topicIndex++; renderTopic(); addStar(); }
+}
+function topicPrev(){
+  if(topicIndex > 0){ topicIndex--; renderTopic(); }
+}
+
+/* ---------------- Инициализация ---------------- */
+renderLetter();
+renderSyll();
+renderWord();
+renderNumber();
+</script>
+</body>
+</html>
